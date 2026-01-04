@@ -114,6 +114,7 @@ def download_video(url, quality='best'):
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
+        'force_ipv4': True,  # Force IPv4 to fix DNS issues on some platforms
     }
     
     try:
