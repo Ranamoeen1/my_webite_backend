@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: video-downloader
+    env: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    numInstances: 1
+    envVars:
+      - key: PORT
+        value: 5000
