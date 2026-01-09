@@ -132,16 +132,6 @@ def download_video(url, quality='best'):
     url_hash = hashlib.md5(url.encode()).hexdigest()[:10]
     timestamp = int(time.time())
     
-    # FAILSAFE MODE: Use local ffmpeg for merging
-    logger.info("Using local ffmpeg for merging")
-    
-    # Ensure local ffmpeg is executable
-    try:
-        os.chmod('./ffmpeg', 0o755)
-        os.chmod('./ffprobe', 0o755)
-    except:
-        pass
-        
     ydl_opts = {
         'outtmpl': os.path.join(DOWNLOAD_FOLDER, f'{url_hash}_{timestamp}.%(ext)s'),
         # Allow merging, fallback to best single file
@@ -151,8 +141,6 @@ def download_video(url, quality='best'):
         'extract_flat': False,
         'nocheckcertificate': True,
         'ignoreerrors': False,
-        # Point to the DIRECTORY containing ffmpeg binary
-        'ffmpeg_location': os.getcwd(),
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
