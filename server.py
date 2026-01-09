@@ -147,6 +147,12 @@ def download_video(url, quality='best'):
         'force_ipv4': True,  # Force IPv4 to fix DNS issues on some platforms
     }
     
+    # Add cookie file if it exists (to bypass bot detection)
+    cookie_file = os.environ.get('COOKIE_FILE', 'cookies.txt')
+    if os.path.exists(cookie_file):
+        ydl_opts['cookiefile'] = cookie_file
+        logger.info(f"Using cookie file: {cookie_file}")
+    
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # Extract info and download
