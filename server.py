@@ -23,6 +23,48 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})  # Enable CORS for all API ro
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ==========================================
+# DNS FIX: Monkeypatch socket.getaddrinfo
+# ==========================================
+import dns.resolver
+import socket
+
+def configure_dns():
+    """Force use of Google DNS to bypass container issues"""
+    try:
+        # Create a resolver that uses Google DNS
+        res = dns.resolver.Resolver()
+        res.nameservers = ['8.8.8.8', '8.8.4.4']
+        
+        _original_getaddrinfo = socket.getaddrinfo
+        
+        def patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+            # If it's an IP address, use original
+            try:
+                socket.inet_aton(host)
+                return _original_getaddrinfo(host, port, family, type, proto, flags)
+            except:
+                pass
+                
+            try:
+                # Try to resolve using our custom resolver
+                answers = res.resolve(host)
+                ip = answers[0].address
+                logger.info(f"DNS Fix: Resolved {host} to {ip}")
+                return _original_getaddrinfo(ip, port, family, type, proto, flags)
+            except Exception as e:
+                # Fallback to original if custom resolution fails
+                logger.warning(f"DNS Fix failed for {host}: {e}, falling back to system DNS")
+                return _original_getaddrinfo(host, port, family, type, proto, flags)
+                
+        socket.getaddrinfo = patched_getaddrinfo
+        logger.info("DNS Monkeypatch applied successfully")
+    except Exception as e:
+        logger.error(f"Failed to apply DNS monkeypatch: {e}")
+
+# Apply the fix
+configure_dns()
+
 # Configuration
 DOWNLOAD_FOLDER = 'downloads'
 MAX_FILE_AGE = 3600  # Delete files older than 1 hour (in seconds)
