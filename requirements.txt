@@ -1,5 +1,5 @@
 flask>=3.0.0
 flask-cors>=4.0.0
-yt-dlp>=2024.08.01
+yt-dlp>=2025.01.15
 gunicorn>=20.1.0
 dnspython>=2.6.0

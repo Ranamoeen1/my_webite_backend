@@ -49,11 +49,13 @@ echo "✅ Selected: $SELECTED_BROWSER"
 echo ""
 
 # Instructions
-echo "📝 IMPORTANT STEPS:"
-echo "   1. Make sure you are LOGGED IN to Instagram in $SELECTED_BROWSER"
-echo "   2. Visit instagram.com in that browser before proceeding"
+echo "📝 IMPORTANT STEPS TO BYPASS BOT DETECTION:"
+echo "   1. Open $SELECTED_BROWSER"
+echo "   2. Log in to Instagram and YouTube"
+echo "   3. Visit a few videos/posts to ensure cookies are active"
+echo "   4. Close the browser (some browsers lock the cookie database)"
 echo ""
-read -p "Press Enter when ready to extract cookies..."
+read -p "Press Enter when you have CLOSED the browser..."
 echo ""
 
 # Extract cookies
