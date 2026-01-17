@@ -152,12 +152,6 @@ def download_video(url, quality='best'):
         'extract_flat': False,
         'nocheckcertificate': True,
         'ignoreerrors': False,
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Sec-Fetch-Mode': 'navigate',
-        },
         'impersonate': 'chrome', # Mimic Chrome's TLS fingerprint and headers
         'force_ipv4': True,  # Force IPv4 to fix DNS issues on some platforms
     }
@@ -166,7 +160,23 @@ def download_video(url, quality='best'):
     cookie_file = os.environ.get('COOKIE_FILE', 'cookies.txt')
     if os.path.exists(cookie_file):
         ydl_opts['cookiefile'] = cookie_file
-        logger.info(f"Using cookie file: {cookie_file}")
+        logger.info(f"SUCCESS: Using cookie file: {os.path.abspath(cookie_file)}")
+    else:
+        logger.warning(f"WARNING: Cookie file not found at {os.path.abspath(cookie_file)}")
+    
+    # Advanced headers to mimic a real browser
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-Dest': 'document',
+        'Referer': 'https://www.instagram.com/',
+        'Origin': 'https://www.instagram.com/',
+    }
+    
+    ydl_opts['http_headers'] = headers
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
