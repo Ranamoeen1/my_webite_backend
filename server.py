@@ -152,7 +152,6 @@ def download_video(url, quality='best'):
         'extract_flat': False,
         'nocheckcertificate': True,
         'ignoreerrors': False,
-        'impersonate': 'chrome', # Mimic Chrome's TLS fingerprint and headers
         'force_ipv4': True,  # Force IPv4 to fix DNS issues on some platforms
     }
     
@@ -355,7 +354,7 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'service': 'video-downloader-backend',
-        'version': '1.0.0'
+        'version': '1.0.1'
     })
 
 
