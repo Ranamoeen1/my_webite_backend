@@ -158,6 +158,7 @@ def download_video(url, quality='best'):
             'Accept-Language': 'en-US,en;q=0.9',
             'Sec-Fetch-Mode': 'navigate',
         },
+        'impersonate': 'chrome', # Mimic Chrome's TLS fingerprint and headers
         'force_ipv4': True,  # Force IPv4 to fix DNS issues on some platforms
     }
     
