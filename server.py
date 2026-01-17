@@ -14,6 +14,7 @@ import time
 import hashlib
 from pathlib import Path
 import logging
+import shutil
 
 # Initialize Flask app
 app = Flask(__name__, static_url_path='', static_folder='.')
@@ -71,6 +72,11 @@ MAX_FILE_AGE = 3600  # Delete files older than 1 hour (in seconds)
 
 # Create downloads folder if it doesn't exist
 Path(DOWNLOAD_FOLDER).mkdir(exist_ok=True)
+
+
+def check_ffmpeg():
+    """Check if ffmpeg is installed and available in PATH"""
+    return shutil.which('ffmpeg') is not None
 
 
 def cleanup_old_files():
@@ -132,10 +138,15 @@ def download_video(url, quality='best'):
     url_hash = hashlib.md5(url.encode()).hexdigest()[:10]
     timestamp = int(time.time())
     
+    # Check for FFmpeg
+    has_ffmpeg = check_ffmpeg()
+    if not has_ffmpeg:
+        logger.warning("FFmpeg not found! Falling back to 'best' format (single file) to avoid merging error.")
+    
     ydl_opts = {
         'outtmpl': os.path.join(DOWNLOAD_FOLDER, f'{url_hash}_{timestamp}.%(ext)s'),
-        # Allow merging, fallback to best single file
-        'format': 'bestvideo*+bestaudio/best',
+        # If ffmpeg exists, allow merging. Otherwise, fallback to best single file
+        'format': 'bestvideo*+bestaudio/best' if has_ffmpeg else 'best',
         'quiet': False,
         'no_warnings': False,
         'extract_flat': False,
