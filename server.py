@@ -165,15 +165,8 @@ def download_video(url, quality='best'):
         logger.warning(f"WARNING: Cookie file not found at {os.path.abspath(cookie_file)}")
     
     # Advanced headers to mimic a real browser
+    # Note: yt-dlp's impersonate feature handles most of this, but we add IG specific ones
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Dest': 'document',
-        'Referer': 'https://www.instagram.com/',
-        'Origin': 'https://www.instagram.com/',
         'X-IG-App-ID': '936619743392459', # Instagram Web App ID
     }
     
@@ -183,7 +176,9 @@ def download_video(url, quality='best'):
     proxy = os.environ.get('PROXY')
     if proxy:
         ydl_opts['proxy'] = proxy
-        logger.info(f"Using proxy: {proxy[:10]}...")
+        logger.info(f"Using proxy: {proxy[:15]}...")
+    else:
+        logger.warning("No PROXY environment variable found. Using direct connection (likely to be blocked).")
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -372,6 +367,40 @@ def index():
     """
     return health_check()
 
+
+@app.route('/api/test-proxy', methods=['GET'])
+def test_proxy():
+    """Test if the configured proxy is working and return the external IP"""
+    proxy = os.environ.get('PROXY')
+    results = {
+        "proxy_configured": bool(proxy),
+        "proxy_url": proxy[:15] + "..." if proxy else None,
+        "direct_ip": None,
+        "proxy_ip": None,
+        "error": None
+    }
+    
+    try:
+        # Get direct IP
+        results["direct_ip"] = requests.get('https://api.ipify.org', timeout=5).text
+        
+        # Get proxy IP if configured
+        if proxy:
+            proxies = {'http': proxy, 'https': proxy}
+            results["proxy_ip"] = requests.get('https://api.ipify.org', proxies=proxies, timeout=10).text
+            
+            if results["proxy_ip"] == results["direct_ip"]:
+                results["status"] = "Proxy configured but NOT being used (IPs match)"
+            else:
+                results["status"] = "Proxy is WORKING (IPs differ)"
+        else:
+            results["status"] = "No proxy configured"
+            
+    except Exception as e:
+        results["error"] = str(e)
+        results["status"] = "Error testing proxy"
+        
+    return jsonify(results)
 
 if __name__ == '__main__':
     logger.info("Starting Video Downloader Backend Server...")
