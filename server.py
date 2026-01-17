@@ -174,9 +174,16 @@ def download_video(url, quality='best'):
         'Sec-Fetch-Dest': 'document',
         'Referer': 'https://www.instagram.com/',
         'Origin': 'https://www.instagram.com/',
+        'X-IG-App-ID': '936619743392459', # Instagram Web App ID
     }
     
     ydl_opts['http_headers'] = headers
+
+    # Proxy support (Crucial for Cloud Hosting)
+    proxy = os.environ.get('PROXY')
+    if proxy:
+        ydl_opts['proxy'] = proxy
+        logger.info(f"Using proxy: {proxy[:10]}...")
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
