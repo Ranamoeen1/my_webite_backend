@@ -157,6 +157,11 @@ def download_video(url, quality='best'):
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
         }] if has_ffmpeg else [],
+        # Add extractor args to bypass YouTube bot detection
+        'extractor_args': {
+            'youtubetab': {'skip': ['webpage']},
+            'youtube': {'player_skip': ['webpage', 'configs']},
+        },
     }
     
     # Add cookie file if it exists (to bypass bot detection)
