@@ -414,7 +414,6 @@
 .google.com	TRUE	/	TRUE	13444686282131172	__Secure-3PSIDCC	
 .google.com	TRUE	/	TRUE	13444545935992874	__Secure-3PSIDTS	
 .google.com	TRUE	/	TRUE	1782556722	__Secure-BUCKET	CJoB
-.google.com	TRUE	/	TRUE	1767005022	__Secure-STRP	AD6DogvbYU2C62GsjKQBdHGn4Xr1tpcYF0AF-1pRL8vjBnqIH11cS6mmeTkfZp51ptz3VSWTgGnu-7avBk8hP77cJQydJxUcn3JR
 .google.com	TRUE	/chrome/	FALSE	13447276022082620	_ga	
 .google.com	TRUE	/chrome/	FALSE	13447276024133068	_ga_B7W0ZKZYDK	
 .google.com	TRUE	/chrome/	FALSE	13420317488000000	_gcl_au	
@@ -467,11 +466,13 @@
 .innity.com	TRUE	/	TRUE	13440670755941044	p689	
 .insightexpressai.com	TRUE	/	TRUE	13440498734053148	DW	
 .insightexpressai.com	TRUE	/	TRUE	13440498734053362	DW_Time	
-.instagram.com	TRUE	/	TRUE	1802547145	csrftoken	KZMbO4hSr0Yq8INKqJ3aek
+.instagram.com	TRUE	/	TRUE	1803404256	csrftoken	KZMbO4hSr0Yq8INKqJ3aek
 .instagram.com	TRUE	/	TRUE	13442134319581284	datr	
 .instagram.com	TRUE	/	TRUE	13420532734058058	ds_user_id	
-.instagram.com	TRUE	/	TRUE	13439110319581552	ig_did	
+.instagram.com	TRUE	/	TRUE	1800380255	ig_did	82CD52CD-2C80-46B5-B8B9-87155CE7326C
 .instagram.com	TRUE	/	TRUE	13413360585844328	ig_direct_region_hint	
+.instagram.com	TRUE	/	TRUE	1800380255	ig_nrcb	1
+.instagram.com	TRUE	/	TRUE	1803404255	mid	aW5r3wALAAEBBX5A3H70FBP52s6P
 .instagram.com	TRUE	/	TRUE	13413359475000000	wd	
 .ipredictive.com	TRUE	/	TRUE	13443984963728060	cu	
 .iqzone.com	TRUE	/	TRUE	13413443548169392	iq_r_key	
@@ -602,8 +603,6 @@
 .moviesbox.com.co	TRUE	/	FALSE	13419451760000000	_sharedID_cst	
 .mozilla.org	TRUE	/	FALSE	1796374959	_ga	GA1.2.962088175.1761814959
 .mozilla.org	TRUE	/	FALSE	1796374963	_ga_B9CY1C9VBC	GS2.1.s1761814959$o1$g0$t1761814963$j56$l0$h0
-.mozilla.org	TRUE	/	FALSE	1761815019	_gat	1
-.mozilla.org	TRUE	/	FALSE	1761901359	_gid	GA1.2.358311519.1761814960
 .n8n.cloud	TRUE	/	FALSE	13420308296000000	_fbp	
 .n8n.cloud	TRUE	/	FALSE	13447092295721176	_ga	
 .n8n.cloud	TRUE	/	FALSE	13417966973000000	_gcl_au	
@@ -642,8 +641,6 @@
 .nrich.ai	TRUE	/	TRUE	13446793962392674	_nauid	
 .odoo.com	TRUE	/	FALSE	13442523055936048	_ga	
 .odoo.com	TRUE	/	FALSE	13442523057884436	_ga_SF317W7ESF	
-.odoo.com	TRUE	/	FALSE	1764326417	utm_medium	module
-.odoo.com	TRUE	/	FALSE	1764326417	utm_source	db
 .office.com	TRUE	/	FALSE	13440093506000000	_clck	
 .office.com	TRUE	/	FALSE	13408643908000000	_clsk	
 .omnifytv.live	TRUE	/	TRUE	13438888398873274	xeotv	
@@ -1136,7 +1133,6 @@ a20673560014.cdn.optimizely.com	FALSE	/	TRUE	13422163788206100	https://zoom.us_2
 accounts.google.com	FALSE	/	TRUE	13414168279000000	OTZ	
 accounts.google.com	FALSE	/	TRUE	13447100987132116	__Host-GAPS	
 accounts.odoo.com	FALSE	/	FALSE	1793178413	frontend_lang	en_US
-accounts.odoo.com	FALSE	/	TRUE	1762247213	session_id	99D-STMFQXj4rMQSBGXZ5FaC7SskcHmFR1SKlTjBc9I2eA4olKprPyzDqGp-_JKh-S4uboD5F-rvH_uMDGTq
 accounts.x.ai	FALSE	/	TRUE	13419352276715008	last-logged-in-with	
 ad-cdn.technoratimedia.com	FALSE	/html	TRUE	13413443575393120	tads_tbla_bidi	
 ad-cdn.technoratimedia.com	FALSE	/html	TRUE	13413443575393936	tads_wmg_bidi	
@@ -1211,7 +1207,6 @@ leetcode.com	FALSE	/	TRUE	0	INGRESSCOOKIE
 leetcode.com	FALSE	/	TRUE	13444599881481538	csrftoken	
 localhost	FALSE	/	FALSE	1798791066	cids	1
 localhost	FALSE	/	FALSE	1793173008	frontend_lang	en_US
-localhost	FALSE	/	FALSE	1767859867	session_id	mhY7d74F0aTgPfwc0wJAsStOqOdPgYPjnQBBRC-_TSY9hwVjlO59D9YzBUtygVfgRWzxEex9fHRl_yQDCucp
 login.microsoftonline.com	FALSE	/	TRUE	13447013362348942	AADSSOTILES	
 login.microsoftonline.com	FALSE	/	TRUE	13447013362348588	ESTSSSOTILES	
 m365.cloud.microsoft	FALSE	/	TRUE	13440093520083852	MicrosoftApplicationsTelemetryDeviceId	
@@ -1225,7 +1220,6 @@ meet.google.com	FALSE	/	TRUE	13446970112729352	__Secure-OSID
 mkallvideodownloader.gt.tc	FALSE	/	FALSE	13411563795496506	__test	
 mkallvideodownloader.gt.tc	FALSE	/	FALSE	13412146997000000	dom3ic8zudi28v8lr6fgphwffqoz0j6c	
 mkallvideodownloader.gt.tc	FALSE	/	FALSE	13411542207000000	m5a4xojbcp2nx3gptmm633qal3gzmadn	
-odoocdn.com	FALSE	/	TRUE	1762247216	session_id	omE45IxBpUJuhaP3qM6Gza0I0nf_tCJicqPZMOXLLatsoMapVKRNcOHdRXIQMgmg298WoyM6B_IZF0ECcUp7
 ogs.google.com	FALSE	/	TRUE	13415459707000000	OTZ	
 passwords.google.com	FALSE	/	TRUE	13443792019773416	OSID	
 pbs.nextmillmedia.com	FALSE	/	TRUE	13440875103660604	33across	
@@ -1336,7 +1330,6 @@ www.fiverr.com	FALSE	/	FALSE	13443988659449766	_tq_id.TV-18900945-1.8951
 www.freeconvert.com	FALSE	/	FALSE	13412235737000000	ascVID	
 www.freeconvert.com	FALSE	/	FALSE	13412235737000000	bydataSessionId	
 www.freeconvert.com	FALSE	/	FALSE	13412320339000000	pro_user	
-www.google.com	FALSE	/	FALSE	1767005331	DV	czw5J_p6qLsbAJonGalrPPUlQAebthk
 www.googleadservices.com	FALSE	/pagead/conversion/17432858752/	TRUE	13418592478350072	Conversion	
 www.googleadservices.com	FALSE	/pagead/conversion/927621030/	TRUE	13417461022799994	Conversion	
 www.ilovepdf.com	FALSE	/	FALSE	13412325215000000	fp0	
@@ -1349,7 +1342,6 @@ www.moviesbox.com.co	FALSE	/	TRUE	13411070959512876	_lscache_vary
 www.moviesbox.com.co	FALSE	/	FALSE	13442434324000000	av_cookie1	
 www.moviesbox.com.co	FALSE	/	FALSE	13413490162000000	av_ip	
 www.odoo.com	FALSE	/	FALSE	1793184017	frontend_lang	en_US
-www.odoo.com	FALSE	/	TRUE	1762252817	session_id	B-SX2cDGBkIdNgdrCzCbsx13Ml4onleoFY3--j-GKARs6jaQOGrBU_-7At_9lCadQFc_jxvumlddEcfKFlkh
 www.office.com	FALSE	/	TRUE	13440093513609228	MicrosoftApplicationsTelemetryDeviceId	
 www.office.com	FALSE	/	TRUE	13408586316547536	OH.DCAffinity	
 www.pinum.org.pk	FALSE	/	FALSE	13440167266833556	cookiesession1	

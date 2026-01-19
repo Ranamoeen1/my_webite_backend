@@ -146,13 +146,17 @@ def download_video(url, quality='best'):
     ydl_opts = {
         'outtmpl': os.path.join(DOWNLOAD_FOLDER, f'{url_hash}_{timestamp}.%(ext)s'),
         # If ffmpeg exists, allow merging. Otherwise, fallback to best single file
-        'format': 'bestvideo*+bestaudio/best' if has_ffmpeg else 'best',
+        'format': 'bestvideo+bestaudio/best' if has_ffmpeg else 'best',
         'quiet': False,
         'no_warnings': False,
         'extract_flat': False,
         'nocheckcertificate': True,
         'ignoreerrors': False,
         'force_ipv4': True,  # Force IPv4 to fix DNS issues on some platforms
+        'postprocessors': [{
+            'key': 'FFmpegVideoConvertor',
+            'preferedformat': 'mp4',
+        }] if has_ffmpeg else [],
     }
     
     # Add cookie file if it exists (to bypass bot detection)
@@ -166,6 +170,9 @@ def download_video(url, quality='best'):
     # Advanced headers to mimic a real browser
     # Note: yt-dlp's impersonate feature handles most of this, but we add IG specific ones
     headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
         'X-IG-App-ID': '936619743392459', # Instagram Web App ID
     }
     
@@ -354,7 +361,7 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'service': 'video-downloader-backend',
-        'version': '1.0.1'
+        'version': '1.1.0'
     })
 
 
