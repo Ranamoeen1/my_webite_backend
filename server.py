@@ -159,15 +159,14 @@ def download_video(url, quality='best'):
     timestamp = int(time.time())
     
     has_ffmpeg = check_ffmpeg()
-    if not has_ffmpeg:
-        logger.warning("FFmpeg not found! Falling back to 'best' format.")
     
-    # Define strategies to try
+    # Define strategies - Optimized Order for Speed: iOS -> Android -> TV -> Chrome
+    # iOS/Android often work without PO Token more reliably than Chrome recently.
     strategies = [
         {
-            'name': 'Impersonate Chrome (Browser)',
+            'name': 'iOS Client (Mobile)',
             'opts': {
-                'impersonate': 'chrome',
+                'extractor_args': {'youtube': {'player_client': ['ios']}},
             }
         },
         {
@@ -177,16 +176,20 @@ def download_video(url, quality='best'):
             }
         },
         {
-            'name': 'iOS Client (Mobile)',
-            'opts': {
-                'extractor_args': {'youtube': {'player_client': ['ios']}},
-            }
-        },
-        {
             'name': 'TV Client (Embedded)',
             'opts': {
                 'extractor_args': {'youtube': {'player_client': ['tv']}},
             }
+        },
+        {
+            'name': 'Impersonate Chrome (Browser)',
+            'opts': {
+                'impersonate': 'chrome',
+            }
+        },
+        {
+            'name': 'Default Client (Standard)',
+            'opts': {}
         }
     ]
 

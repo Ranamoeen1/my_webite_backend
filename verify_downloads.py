@@ -10,7 +10,9 @@ TEST_URLS = [
     # YouTube (Me at the zoo - usually safe)
     {"platform": "YouTube Public", "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw"},
     # Instagram Reel (Public)
-    {"platform": "Instagram", "url": "https://www.instagram.com/reel/C2d2q2_r3qX/"}, 
+    # User Reported Video
+    {"platform": "User Test Case", "url": "https://youtu.be/KUpwupYj_tY?si=q8m9ih6x1L0nzyFG"},
+    # Geo-Restricted (Blocked in US, available in CA/UK etc.) 
     # Facebook Video
     {"platform": "Facebook", "url": "https://www.facebook.com/watch/?v=10153231379946729"}, 
     # Geo-Restricted (Blocked in US, available in CA/UK etc.)
