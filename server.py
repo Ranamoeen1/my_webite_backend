@@ -15,6 +15,8 @@ import hashlib
 from pathlib import Path
 import logging
 import shutil
+import random
+import requests
 
 # Initialize Flask app
 app = Flask(__name__, static_url_path='', static_folder='.')
@@ -123,6 +125,32 @@ def get_video_info(url):
         }
 
 
+def get_auto_proxy():
+    """
+    Fetch a working HTTP/HTTPS proxy from public lists.
+    Returns: Proxy URL or None
+    """
+    try:
+        logger.info("Fetching auto-proxy list...")
+        # Source: TheSpeedX/PROXY-List (HTTP/HTTPS)
+        url = "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            proxies = response.text.strip().split('\n')
+            # Filter for decent looking proxies (simple check)
+            proxies = [p.strip() for p in proxies if ':' in p]
+            if proxies:
+                # Pick a random one
+                chosen = random.choice(proxies)
+                full_proxy = f"http://{chosen}"
+                logger.info(f"Auto-Proxy selected: {full_proxy}")
+                return full_proxy
+    except Exception as e:
+        logger.error(f"Failed to fetch auto-proxy: {e}")
+    
+    return None
+
+
 def download_video(url, quality='best'):
     """
     Download video from URL using yt-dlp with smart fallbacks
@@ -208,20 +236,24 @@ def download_video(url, quality='best'):
             ydl_opts['cookiefile'] = cookie_file
 
         # Proxy support
+        # 1. Check environment variable
         proxy = os.environ.get('PROXY')
         if proxy:
             ydl_opts['proxy'] = proxy
+
+        # 2. Check for manual strategy proxy (if we add one later)
+        if 'proxy' in strategy.get('opts', {}):
+             ydl_opts['proxy'] = strategy['opts']['proxy']
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 
-                # ... File finding logic (Same as before) ...
+                # ... File finding logic ...
                 expected_filename = ydl.prepare_filename(info)
                 filename = expected_filename
                 
                 if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                     # Try prefix find
                     prefix = f"{url_hash}_{timestamp}"
                     candidates = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.startswith(prefix)]
                     if candidates:
@@ -229,7 +261,6 @@ def download_video(url, quality='best'):
                         filename = os.path.join(DOWNLOAD_FOLDER, candidates[0])
                 
                 if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                    # Try timestamp find
                     files = [os.path.join(DOWNLOAD_FOLDER, f) for f in os.listdir(DOWNLOAD_FOLDER)]
                     if files:
                         latest_file = max(files, key=os.path.getctime)
@@ -239,7 +270,6 @@ def download_video(url, quality='best'):
                 if not os.path.exists(filename) or os.path.getsize(filename) == 0:
                      raise Exception("File not found after download")
 
-                # Success! Return result
                 logger.info(f"Download SUCCESS with strategy: {strategy_name}")
                 return {
                     'success': True,
@@ -252,9 +282,62 @@ def download_video(url, quality='best'):
                 }
 
         except Exception as e:
-            logger.warning(f"Strategy {strategy_name} failed: {str(e)}")
-            last_error = str(e)
-            # COntinue to next strategy
+            error_str = str(e)
+            logger.warning(f"Strategy {strategy_name} failed: {error_str}")
+            
+            # Check for Geo-Restriction Detection
+            if "unavailable in your country" in error_str or "uploader has not made this video available" in error_str:
+                logger.info("❌ Geo-Restriction detected! Attempting Auto-Proxy...")
+                
+                # Fetch a proxy dynamically
+                auto_proxy = get_auto_proxy()
+                if auto_proxy:
+                    # Create a new dynamic strategy for this proxy
+                    proxy_strategy = {
+                        'name': f'Auto-Proxy ({auto_proxy})',
+                        'opts': {
+                            'proxy': auto_proxy,
+                            'geo_bypass_country': 'CA' # Try Canada by default
+                        }
+                    }
+                    # Insert this strategy immediately after the current one to try next
+                    # But we are iterating over a list. Modifying it while iterating is risky.
+                    # Instead, let's just run a "sub-attempt" right here.
+                    
+                    logger.info(f"🔁 Retrying with Auto-Proxy: {auto_proxy}")
+                    # Update opts for this specific retry
+                    retry_opts = ydl_opts.copy()
+                    retry_opts['proxy'] = auto_proxy
+                    retry_opts['geo_bypass_country'] = 'CA'
+                    
+                    try:
+                        with yt_dlp.YoutubeDL(retry_opts) as ydl_retry:
+                            info = ydl_retry.extract_info(url, download=True)
+                            # (Repeat file finding logic - ideally refactor this, but for now duplicate for safety)
+                            expected_filename = ydl_retry.prepare_filename(info)
+                            filename = expected_filename
+                            if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                                prefix = f"{url_hash}_{timestamp}"
+                                candidates = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.startswith(prefix)]
+                                if candidates:
+                                    candidates.sort(key=lambda x: os.path.getsize(os.path.join(DOWNLOAD_FOLDER, x)), reverse=True)
+                                    filename = os.path.join(DOWNLOAD_FOLDER, candidates[0])
+                            
+                            if os.path.exists(filename) and os.path.getsize(filename) > 0:
+                                logger.info(f"✅ Auto-Proxy SUCCEEDED!")
+                                return {
+                                    'success': True,
+                                    'filepath': filename,
+                                    'filename': os.path.basename(filename),
+                                    'title': info.get('title', 'Unknown'),
+                                    'platform': info.get('extractor', 'Unknown'),
+                                    'duration': info.get('duration', 0),
+                                    'file_size': os.path.getsize(filename),
+                                }
+                    except Exception as proxy_error:
+                         logger.warning(f"Auto-Proxy attempt failed: {proxy_error}")
+
+            last_error = error_str
             continue
 
     # If we get here, all strategies failed

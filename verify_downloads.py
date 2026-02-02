@@ -13,6 +13,8 @@ TEST_URLS = [
     {"platform": "Instagram", "url": "https://www.instagram.com/reel/C2d2q2_r3qX/"}, 
     # Facebook Video
     {"platform": "Facebook", "url": "https://www.facebook.com/watch/?v=10153231379946729"}, 
+    # Geo-Restricted (Blocked in US, available in CA/UK etc.)
+    {"platform": "Geo-Restricted Test", "url": "https://www.youtube.com/watch?v=z23GK9PO2jE"},
 ]
 
 def test_download(test_case):
