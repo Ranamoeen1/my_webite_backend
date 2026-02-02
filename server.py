@@ -159,10 +159,33 @@ def download_video(url, quality='best'):
     timestamp = int(time.time())
     
     has_ffmpeg = check_ffmpeg()
-    
-    # Define strategies - Optimized Order for Speed: iOS -> Android -> TV -> Chrome
-    # iOS/Android often work without PO Token more reliably than Chrome recently.
+
+    # Base yt-dlp options for all strategies
+    base_ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'format': f"{quality}video+{quality}audio/best" if has_ffmpeg else 'best',
+        'outtmpl': f'{DOWNLOAD_FOLDER}/%(id)s_%(epoch)s.%(ext)s',
+        'noplaylist': True,
+        'socket_timeout': 10,   
+        'retries': 2,          
+        'fragment_retries': 2,
+        'concurrent_fragments': 5, # Speed up download significantly
+        # Geo-bypass defaults
+        'geo_bypass': True,
+        'geo_bypass_country': 'US',
+        'nocheckcertificate': True,
+        'ignoreerrors': False,
+        'force_ipv4': True,
+        'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}] if has_ffmpeg else [],
+    }
+
+    # Define strategies - Optimized Order: Default -> iOS -> Android -> Chrome
     strategies = [
+        {
+            'name': 'Default Client (Standard)',
+            'opts': {}
+        },
         {
             'name': 'iOS Client (Mobile)',
             'opts': {
@@ -176,53 +199,59 @@ def download_video(url, quality='best'):
             }
         },
         {
-            'name': 'TV Client (Embedded)',
-            'opts': {
-                'extractor_args': {'youtube': {'player_client': ['tv']}},
-            }
-        },
-        {
             'name': 'Impersonate Chrome (Browser)',
             'opts': {
                 'impersonate': 'chrome',
             }
-        },
-        {
-            'name': 'Default Client (Standard)',
-            'opts': {}
         }
     ]
 
     last_error = None
 
+    def find_downloaded_file(ydl, info, url_hash, timestamp):
+        """Helper to find the best matching file after download"""
+        expected_filename = ydl.prepare_filename(info)
+        if os.path.exists(expected_filename) and os.path.getsize(expected_filename) > 0:
+            return expected_filename
+            
+        # Try prefix find
+        prefix = f"{url_hash}_{timestamp}"
+        candidates = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.startswith(prefix)]
+        if candidates:
+            candidates.sort(key=lambda x: os.path.getsize(os.path.join(DOWNLOAD_FOLDER, x)), reverse=True)
+            candidate_path = os.path.join(DOWNLOAD_FOLDER, candidates[0])
+            if os.path.getsize(candidate_path) > 0:
+                return candidate_path
+        
+        # Try timestamp find (last 60s)
+        files = [os.path.join(DOWNLOAD_FOLDER, f) for f in os.listdir(DOWNLOAD_FOLDER)]
+        if files:
+            latest_file = max(files, key=os.path.getctime)
+            if time.time() - os.path.getctime(latest_file) < 60:
+                 if os.path.getsize(latest_file) > 0:
+                     return latest_file
+        
+        return None
+
     for strategy in strategies:
         strategy_name = strategy['name']
         logger.info(f"Attempting download with strategy: {strategy_name}")
 
-        # Base Options
-        ydl_opts = {
-            'outtmpl': os.path.join(DOWNLOAD_FOLDER, f'{url_hash}_{timestamp}.%(ext)s'),
-            'format': 'bestvideo+bestaudio/best' if has_ffmpeg else 'best',
-            'quiet': False,
-            'no_warnings': False,
-            'nocheckcertificate': True,
-            'ignoreerrors': False,
-            'force_ipv4': True,
-            'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}] if has_ffmpeg else [],
-        }
+        # Start with base options and deep copy to avoid mutations
+        import copy
+        ydl_opts = copy.deepcopy(base_ydl_opts)
+        
+        # Set unique output template for this run
+        ydl_opts['outtmpl'] = os.path.join(DOWNLOAD_FOLDER, f'{url_hash}_{timestamp}.%(ext)s')
 
         # Apply strategy options
-        # Note: We merge carefully. shallow update is fine for top-level keys.
-        # For nested keys like 'extractor_args', we need to be careful if we had base ones.
-        # But here our base opts don't have conflicting nested keys.
         ydl_opts.update(strategy['opts'])
 
-        # Add PO Token/Visitor Data if available (still good to have if user set them)
+        # Add PO Token/Visitor Data
         po_token = os.environ.get('PO_TOKEN')
         visitor_data = os.environ.get('VISITOR_DATA')
         
         if po_token or visitor_data:
-            # We need to manually merge into extractor_args if it exists in strategy
             if 'extractor_args' not in ydl_opts:
                 ydl_opts['extractor_args'] = {}
             if 'youtube' not in ydl_opts['extractor_args']:
@@ -252,25 +281,8 @@ def download_video(url, quality='best'):
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 
-                # ... File finding logic ...
-                expected_filename = ydl.prepare_filename(info)
-                filename = expected_filename
-                
-                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                    prefix = f"{url_hash}_{timestamp}"
-                    candidates = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.startswith(prefix)]
-                    if candidates:
-                        candidates.sort(key=lambda x: os.path.getsize(os.path.join(DOWNLOAD_FOLDER, x)), reverse=True)
-                        filename = os.path.join(DOWNLOAD_FOLDER, candidates[0])
-                
-                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                    files = [os.path.join(DOWNLOAD_FOLDER, f) for f in os.listdir(DOWNLOAD_FOLDER)]
-                    if files:
-                        latest_file = max(files, key=os.path.getctime)
-                        if time.time() - os.path.getctime(latest_file) < 60:
-                             filename = latest_file
-
-                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                filename = find_downloaded_file(ydl, info, url_hash, timestamp)
+                if not filename:
                      raise Exception("File not found after download")
 
                 logger.info(f"Download SUCCESS with strategy: {strategy_name}")
@@ -316,17 +328,10 @@ def download_video(url, quality='best'):
                     try:
                         with yt_dlp.YoutubeDL(retry_opts) as ydl_retry:
                             info = ydl_retry.extract_info(url, download=True)
-                            # (Repeat file finding logic - ideally refactor this, but for now duplicate for safety)
-                            expected_filename = ydl_retry.prepare_filename(info)
-                            filename = expected_filename
-                            if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                                prefix = f"{url_hash}_{timestamp}"
-                                candidates = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.startswith(prefix)]
-                                if candidates:
-                                    candidates.sort(key=lambda x: os.path.getsize(os.path.join(DOWNLOAD_FOLDER, x)), reverse=True)
-                                    filename = os.path.join(DOWNLOAD_FOLDER, candidates[0])
                             
-                            if os.path.exists(filename) and os.path.getsize(filename) > 0:
+                            filename = find_downloaded_file(ydl_retry, info, url_hash, timestamp)
+                            
+                            if filename:
                                 logger.info(f"✅ Auto-Proxy SUCCEEDED!")
                                 return {
                                     'success': True,

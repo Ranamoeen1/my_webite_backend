@@ -1,6 +1,6 @@
+yt-dlp
 flask>=3.0.0
 flask-cors>=4.0.0
-yt-dlp>=2024.04.09
 gunicorn>=20.1.0
 dnspython>=2.6.0
 requests>=2.31.0
