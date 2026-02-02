@@ -17,6 +17,7 @@ import logging
 import shutil
 import random
 import requests
+import concurrent.futures
 
 # Initialize Flask app
 app = Flask(__name__, static_url_path='', static_folder='.')
@@ -407,8 +408,17 @@ def download():
         
         logger.info(f"Downloading video from: {url}")
         
-        # Download the video
-        result = download_video(url, quality)
+        # Download the video with a 50-second timeout
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(download_video, url, quality)
+            try:
+                result = future.result(timeout=50) # Strict 50s limit
+            except concurrent.futures.TimeoutError:
+                logger.error(f"Download TIMEOUT for URL: {url}")
+                return jsonify({
+                    'success': False,
+                    'error': 'The download is taking too long (over 50 seconds). Large videos might need more time than the server allows. Please try a shorter video or try again later.'
+                }), 504
         
         if result['success']:
             return jsonify({
