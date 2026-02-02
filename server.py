@@ -125,160 +125,144 @@ def get_video_info(url):
 
 def download_video(url, quality='best'):
     """
-    Download video from URL using yt-dlp
-    
-    Args:
-        url: Video URL
-        quality: Video quality (best, worst, or specific format)
-    
-    Returns:
-        dict: Download result with filepath and metadata
+    Download video from URL using yt-dlp with smart fallbacks
     """
-    # Generate unique filename based on URL hash
     url_hash = hashlib.md5(url.encode()).hexdigest()[:10]
     timestamp = int(time.time())
     
-    # Check for FFmpeg
     has_ffmpeg = check_ffmpeg()
     if not has_ffmpeg:
-        logger.warning("FFmpeg not found! Falling back to 'best' format (single file) to avoid merging error.")
+        logger.warning("FFmpeg not found! Falling back to 'best' format.")
     
-    ydl_opts = {
-        'outtmpl': os.path.join(DOWNLOAD_FOLDER, f'{url_hash}_{timestamp}.%(ext)s'),
-        # If ffmpeg exists, allow merging. Otherwise, fallback to best single file
-        'format': 'bestvideo+bestaudio/best' if has_ffmpeg else 'best',
-        'quiet': False,
-        'no_warnings': False,
-        'extract_flat': False,
-        'nocheckcertificate': True,
-        'ignoreerrors': False,
-        'force_ipv4': True,  # Force IPv4 to fix DNS issues on some platforms
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }] if has_ffmpeg else [],
-        # Add extractor args to bypass YouTube bot detection
-        'extractor_args': {
-            'youtubetab': {'skip': ['webpage']},
-            'youtube': {'player_skip': ['webpage', 'configs']},
-        },
-    }
-
-    # Add PO Token if available (for YouTube bot detection bypass)
-    po_token = os.environ.get('PO_TOKEN')
-    if po_token:
-        if 'extractor_args' not in ydl_opts:
-            ydl_opts['extractor_args'] = {}
-        if 'youtube' not in ydl_opts['extractor_args']:
-            ydl_opts['extractor_args']['youtube'] = {}
-        
-        # Add the token
-        ydl_opts['extractor_args']['youtube']['po_token'] = [f'web+{po_token}']
-        logger.info("SUCCESS: Using PO Token for YouTube")
-        
-    # Add Visitor Data if available
-    visitor_data = os.environ.get('VISITOR_DATA')
-    if visitor_data:
-        if 'extractor_args' not in ydl_opts:
-            ydl_opts['extractor_args'] = {}
-        if 'youtube' not in ydl_opts['extractor_args']:
-            ydl_opts['extractor_args']['youtube'] = {}
-            
-        ydl_opts['extractor_args']['youtube']['visitor_data'] = [visitor_data]
-        logger.info("SUCCESS: Using Visitor Data for YouTube")
-    
-    # Add cookie file if it exists (to bypass bot detection)
-    cookie_file = os.environ.get('COOKIE_FILE', 'cookies.txt')
-    if os.path.exists(cookie_file):
-        ydl_opts['cookiefile'] = cookie_file
-        logger.info(f"SUCCESS: Using cookie file: {os.path.abspath(cookie_file)}")
-    else:
-        logger.warning(f"WARNING: Cookie file not found at {os.path.abspath(cookie_file)}")
-    
-    # Advanced headers to mimic a real browser
-    # Note: yt-dlp's impersonate feature handles most of this, but we add IG specific ones
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        'Sec-Ch-Ua-Mobile': '?0',
-        'Sec-Ch-Ua-Platform': '"Windows"',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'X-IG-App-ID': '936619743392459', # Instagram Web App ID
-    }
-    
-    ydl_opts['http_headers'] = headers
-
-    # Proxy support (Crucial for Cloud Hosting)
-    proxy = os.environ.get('PROXY')
-    if proxy:
-        ydl_opts['proxy'] = proxy
-        logger.info(f"Using proxy: {proxy[:15]}...")
-    else:
-        logger.warning("No PROXY environment variable found. Using direct connection (likely to be blocked).")
-    
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Extract info and download
-            info = ydl.extract_info(url, download=True)
-            
-            # AGGRESSIVE FILE FINDING STRATEGY
-            # 1. Try expected filename
-            expected_filename = ydl.prepare_filename(info)
-            filename = expected_filename
-            
-            # 2. If not found or empty, look for ANY file with our hash prefix
-            if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                prefix = f"{url_hash}_{timestamp}"
-                candidates = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.startswith(prefix)]
-                
-                if candidates:
-                    # Pick the largest file (likely the video)
-                    candidates.sort(key=lambda x: os.path.getsize(os.path.join(DOWNLOAD_FOLDER, x)), reverse=True)
-                    filename = os.path.join(DOWNLOAD_FOLDER, candidates[0])
-                    logger.info(f"Found alternative file via prefix: {filename}")
-            
-            # 3. Last resort: Look for the most recently created file in downloads
-            if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                files = [os.path.join(DOWNLOAD_FOLDER, f) for f in os.listdir(DOWNLOAD_FOLDER)]
-                if files:
-                    latest_file = max(files, key=os.path.getctime)
-                    # Only use if it was created in the last 60 seconds
-                    if time.time() - os.path.getctime(latest_file) < 60:
-                        filename = latest_file
-                        logger.info(f"Found file via timestamp: {filename}")
-
-            # Final check
-            if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                return {
-                    'success': False,
-                    'error': 'Download failed: File not found or empty'
-                }
-            
-            # Get file info
-            file_size = os.path.getsize(filename)
-            
-            return {
-                'success': True,
-                'filepath': filename,
-                'filename': os.path.basename(filename),
-                'title': info.get('title', 'Unknown'),
-                'platform': info.get('extractor', 'Unknown'),
-                'duration': info.get('duration', 0),
-                'file_size': file_size,
+    # Define strategies to try
+    strategies = [
+        {
+            'name': 'Impersonate Chrome (Browser)',
+            'opts': {
+                'impersonate': 'chrome',
             }
-    
-    except Exception as e:
-        logger.error(f"Download error: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e)
+        },
+        {
+            'name': 'Android Client (Mobile)',
+            'opts': {
+                'extractor_args': {'youtube': {'player_client': ['android']}},
+            }
+        },
+        {
+            'name': 'iOS Client (Mobile)',
+            'opts': {
+                'extractor_args': {'youtube': {'player_client': ['ios']}},
+            }
+        },
+        {
+            'name': 'TV Client (Embedded)',
+            'opts': {
+                'extractor_args': {'youtube': {'player_client': ['tv']}},
+            }
         }
+    ]
+
+    last_error = None
+
+    for strategy in strategies:
+        strategy_name = strategy['name']
+        logger.info(f"Attempting download with strategy: {strategy_name}")
+
+        # Base Options
+        ydl_opts = {
+            'outtmpl': os.path.join(DOWNLOAD_FOLDER, f'{url_hash}_{timestamp}.%(ext)s'),
+            'format': 'bestvideo+bestaudio/best' if has_ffmpeg else 'best',
+            'quiet': False,
+            'no_warnings': False,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
+            'force_ipv4': True,
+            'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}] if has_ffmpeg else [],
+        }
+
+        # Apply strategy options
+        # Note: We merge carefully. shallow update is fine for top-level keys.
+        # For nested keys like 'extractor_args', we need to be careful if we had base ones.
+        # But here our base opts don't have conflicting nested keys.
+        ydl_opts.update(strategy['opts'])
+
+        # Add PO Token/Visitor Data if available (still good to have if user set them)
+        po_token = os.environ.get('PO_TOKEN')
+        visitor_data = os.environ.get('VISITOR_DATA')
+        
+        if po_token or visitor_data:
+            # We need to manually merge into extractor_args if it exists in strategy
+            if 'extractor_args' not in ydl_opts:
+                ydl_opts['extractor_args'] = {}
+            if 'youtube' not in ydl_opts['extractor_args']:
+                ydl_opts['extractor_args']['youtube'] = {}
+            
+            if po_token:
+                ydl_opts['extractor_args']['youtube']['po_token'] = [f'web+{po_token}']
+            if visitor_data:
+                ydl_opts['extractor_args']['youtube']['visitor_data'] = [visitor_data]
+
+        # Add cookie file if it exists
+        cookie_file = os.environ.get('COOKIE_FILE', 'cookies.txt')
+        if os.path.exists(cookie_file):
+            ydl_opts['cookiefile'] = cookie_file
+
+        # Proxy support
+        proxy = os.environ.get('PROXY')
+        if proxy:
+            ydl_opts['proxy'] = proxy
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                
+                # ... File finding logic (Same as before) ...
+                expected_filename = ydl.prepare_filename(info)
+                filename = expected_filename
+                
+                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                     # Try prefix find
+                    prefix = f"{url_hash}_{timestamp}"
+                    candidates = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.startswith(prefix)]
+                    if candidates:
+                        candidates.sort(key=lambda x: os.path.getsize(os.path.join(DOWNLOAD_FOLDER, x)), reverse=True)
+                        filename = os.path.join(DOWNLOAD_FOLDER, candidates[0])
+                
+                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                    # Try timestamp find
+                    files = [os.path.join(DOWNLOAD_FOLDER, f) for f in os.listdir(DOWNLOAD_FOLDER)]
+                    if files:
+                        latest_file = max(files, key=os.path.getctime)
+                        if time.time() - os.path.getctime(latest_file) < 60:
+                             filename = latest_file
+
+                if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                     raise Exception("File not found after download")
+
+                # Success! Return result
+                logger.info(f"Download SUCCESS with strategy: {strategy_name}")
+                return {
+                    'success': True,
+                    'filepath': filename,
+                    'filename': os.path.basename(filename),
+                    'title': info.get('title', 'Unknown'),
+                    'platform': info.get('extractor', 'Unknown'),
+                    'duration': info.get('duration', 0),
+                    'file_size': os.path.getsize(filename),
+                }
+
+        except Exception as e:
+            logger.warning(f"Strategy {strategy_name} failed: {str(e)}")
+            last_error = str(e)
+            # COntinue to next strategy
+            continue
+
+    # If we get here, all strategies failed
+    logger.error("All download strategies failed.")
+    return {
+        'success': False,
+        'error': f"All attempts failed. Last error: {last_error}"
+    }
 
 
 @app.route('/api/info', methods=['POST'])
