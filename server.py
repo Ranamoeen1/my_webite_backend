@@ -163,6 +163,29 @@ def download_video(url, quality='best'):
             'youtube': {'player_skip': ['webpage', 'configs']},
         },
     }
+
+    # Add PO Token if available (for YouTube bot detection bypass)
+    po_token = os.environ.get('PO_TOKEN')
+    if po_token:
+        if 'extractor_args' not in ydl_opts:
+            ydl_opts['extractor_args'] = {}
+        if 'youtube' not in ydl_opts['extractor_args']:
+            ydl_opts['extractor_args']['youtube'] = {}
+        
+        # Add the token
+        ydl_opts['extractor_args']['youtube']['po_token'] = [f'web+{po_token}']
+        logger.info("SUCCESS: Using PO Token for YouTube")
+        
+    # Add Visitor Data if available
+    visitor_data = os.environ.get('VISITOR_DATA')
+    if visitor_data:
+        if 'extractor_args' not in ydl_opts:
+            ydl_opts['extractor_args'] = {}
+        if 'youtube' not in ydl_opts['extractor_args']:
+            ydl_opts['extractor_args']['youtube'] = {}
+            
+        ydl_opts['extractor_args']['youtube']['visitor_data'] = [visitor_data]
+        logger.info("SUCCESS: Using Visitor Data for YouTube")
     
     # Add cookie file if it exists (to bypass bot detection)
     cookie_file = os.environ.get('COOKIE_FILE', 'cookies.txt')
