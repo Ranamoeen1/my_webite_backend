@@ -168,9 +168,9 @@ def download_video(url, quality='best'):
         'format': f"{quality}video+{quality}audio/best" if has_ffmpeg else 'best',
         'outtmpl': f'{DOWNLOAD_FOLDER}/%(id)s_%(epoch)s.%(ext)s',
         'noplaylist': True,
-        'socket_timeout': 10,   
-        'retries': 2,          
-        'fragment_retries': 2,
+        'socket_timeout': 5,   
+        'retries': 1,          
+        'fragment_retries': 1,
         'concurrent_fragments': 5, # Speed up download significantly
         # Geo-bypass defaults
         'geo_bypass': True,
